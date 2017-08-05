@@ -1,0 +1,6 @@
+{
+  "type": "targeted_attack",
+  "container": "rwightman/pytorch-extra",
+  "container_gpu": "rwightman/pytorch-extra",
+  "entry_point": "run_attack.sh"
+}
