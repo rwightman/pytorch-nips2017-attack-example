@@ -39,8 +39,8 @@ parser.add_argument('--max_epsilon', type=int, default=16, metavar='N',
                     help='Maximum size of adversarial perturbation. (default: 16.0)')
 parser.add_argument('--steps', type=int, default=10, metavar='N',
                     help='Number of steps to run attack for')
-parser.add_argument('--step_eps', type=float, default=0.0,
-                    help='Per step epsilon, defaults to epsilon/steps')
+parser.add_argument('--step_alpha', type=float, default=0.0,
+                    help='Per step scaling constant, defaults to epsilon/steps')
 parser.add_argument('--norm', default='inf', type=float,
                     help='Gradient norm.')
 parser.add_argument('--targeted', action='store_true', default=False,
@@ -80,20 +80,17 @@ def main():
     debug = False
     eps = 2.0 * args.max_epsilon / 255.0
     num_steps = args.steps
-    if not args.step_eps:
+    if not args.step_alpha:
         if args.norm == float('inf'):
-            step_eps = eps / num_steps
+            step_alpha = eps / num_steps
         else:
-            # Don't bother epsilon step (down) scaling for non infinity norms, otherwise
-            # we never get anywhere with the inifinty-norm clipping constraint applied.
-            # If anything, we may want to scale up to get a reasonably potent attack
-            # in less steps.
+            # Different scaling required for L2 and L1 norms to get anywhere
             if args.norm == 1:
-                step_eps = 500.0  # L1 needs a lot of (arbitrary) love
+                step_alpha = 500.0  # L1 needs a lot of (arbitrary) love
             else:
-                step_eps = 1.0
+                step_alpha = 1.0
     else:
-        step_eps = args.step_eps
+        step_alpha = args.step_alpha
 
     if args.targeted:
         dataset = Dataset(args.input_dir)
@@ -148,12 +145,12 @@ def main():
 
             # normalize and scale gradient
             if args.norm == 2:
-                normed_grad = step_eps * input_var.grad.data / l2norm(input_var.grad.data)
+                normed_grad = step_alpha * input_var.grad.data / l2norm(input_var.grad.data)
             elif args.norm == 1:
-                normed_grad = step_eps * input_var.grad.data / l1norm(input_var.grad.data)
+                normed_grad = step_alpha * input_var.grad.data / l1norm(input_var.grad.data)
             else:
                 # infinity-norm
-                normed_grad = step_eps * torch.sign(input_var.grad.data)
+                normed_grad = step_alpha * torch.sign(input_var.grad.data)
 
             # perturb current input image by normalized and scaled gradient
             if args.targeted:
