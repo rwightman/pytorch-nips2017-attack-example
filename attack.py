@@ -77,7 +77,7 @@ def main():
     args = parser.parse_args()
     assert args.input_dir
 
-    debug = True
+    debug = False
     eps = 2.0 * args.max_epsilon / 255.0
     num_steps = args.steps
     if not args.step_eps:
