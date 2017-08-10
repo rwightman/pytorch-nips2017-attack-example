@@ -1,12 +1,32 @@
-import torch.utils.data as data
-
-from PIL import Image
 import os
 import os.path
 import torch
 import pandas as pd
 
+import torch.utils.data as data
+import torchvision.transforms as transforms
+from PIL import Image
+
 IMG_EXTENSIONS = ['.png', '.jpg']
+
+
+class LeNormalize(object):
+    """Normalize to -1..1 in Google Inception style
+    """
+    def __call__(self, tensor):
+        for t in tensor:
+            t.sub_(0.5).mul_(2.0)
+        return tensor
+
+
+def default_inception_transform(img_size):
+    tf = transforms.Compose([
+        transforms.Scale(img_size),
+        transforms.CenterCrop(img_size),
+        transforms.ToTensor(),
+        LeNormalize(),
+    ])
+    return tf
 
 
 def find_inputs(folder, filename_to_target=None, types=IMG_EXTENSIONS):
